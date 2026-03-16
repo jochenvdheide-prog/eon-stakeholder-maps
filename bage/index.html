@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BAGE – Stakeholder Map</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f0f2f5; color: #1a1a2e; }
+  .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 20px 32px; display: flex; align-items: center; gap: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+  .header-icon { font-size: 28px; }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.3px; }
+  .header p { font-size: 12px; opacity: 0.65; margin-top: 2px; }
+  .header-actions { margin-left: auto; display: flex; gap: 10px; }
+  .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.15s; }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+  .btn-secondary { background: rgba(255,255,255,0.12); color: white; border: 1px solid rgba(255,255,255,0.2); }
+  .btn-secondary:hover { background: rgba(255,255,255,0.2); }
+  .main { display: flex; height: calc(100vh - 72px); }
+  .sidebar { width: 280px; background: white; border-right: 1px solid #e8eaed; overflow-y: auto; flex-shrink: 0; }
+  .canvas-wrap { flex: 1; position: relative; overflow: hidden; background: #f0f2f5; }
+  svg#canvas { width: 100%; height: 100%; cursor: grab; }
+  svg#canvas:active { cursor: grabbing; }
+  .sidebar-section { padding: 16px; border-bottom: 1px solid #f0f0f0; }
+  .sidebar-section h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-bottom: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+  .person-list { display: flex; flex-direction: column; gap: 6px; }
+  .person-card { background: #f8f9fa; border-radius: 10px; padding: 10px 12px; cursor: pointer; border: 2px solid transparent; transition: all 0.15s; }
+  .person-card:hover { border-color: #2563eb; background: #fff; }
+  .person-card.selected { border-color: #2563eb; background: #fff; }
+  .person-card-name { font-size: 13px; font-weight: 600; }
+  .person-card-role { font-size: 11px; color: #888; margin-top: 2px; }
+  .person-card-badge { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-top: 5px; font-weight: 600; }
+  .detail-panel { position: absolute; right: 20px; top: 20px; width: 300px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.12); padding: 20px; display: none; z-index: 100; border: 1px solid #e8eaed; }
+  .detail-panel.visible { display: block; }
+  .detail-close { position: absolute; top: 12px; right: 12px; background: #f0f0f0; border: none; border-radius: 50%; width: 26px; height: 26px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; }
+  .detail-close:hover { background: #e0e0e0; }
+  .detail-avatar { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: white; margin-bottom: 12px; }
+  .detail-name { font-size: 17px; font-weight: 700; }
+  .detail-role { font-size: 13px; color: #666; margin-top: 3px; }
+  .detail-badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 20px; margin-top: 8px; font-weight: 600; }
+  .detail-divider { border: none; border-top: 1px solid #f0f0f0; margin: 14px 0; }
+  .detail-field { margin-bottom: 10px; }
+  .detail-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.6px; color: #999; font-weight: 700; margin-bottom: 3px; }
+  .detail-value { font-size: 13px; color: #333; line-height: 1.5; }
+  .detail-actions { display: flex; gap: 8px; margin-top: 14px; }
+  .detail-actions .btn { flex: 1; font-size: 12px; padding: 8px; text-align: center; border-radius: 8px; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: none; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(3px); }
+  .modal-overlay.visible { display: flex; }
+  .modal { background: white; border-radius: 20px; padding: 28px; width: 420px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+  .modal h2 { font-size: 18px; margin-bottom: 20px; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: #888; margin-bottom: 5px; }
+  .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 9px 12px; border: 1.5px solid #e0e0e0; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; transition: border-color 0.15s; background: #fafafa; }
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: #2563eb; background: white; }
+  .form-group textarea { resize: vertical; min-height: 70px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .btn-edit { background: #f0f2f5; color: #333; border: 1px solid #e0e0e0; }
+  .btn-edit:hover { background: #e8eaed; }
+  .btn-danger { background: #fee2e2; color: #dc2626; }
+  .btn-danger:hover { background: #fecaca; }
+  .add-btn { width: 100%; padding: 10px; background: #f8f9fa; border: 2px dashed #d0d0d0; border-radius: 10px; cursor: pointer; font-size: 13px; color: #888; font-family: inherit; transition: all 0.15s; }
+  .add-btn:hover { border-color: #2563eb; color: #2563eb; background: #fff; }
+  .export-area { padding: 16px; }
+  .export-box { background: #f8f9fa; border-radius: 10px; padding: 12px; font-size: 11px; color: #666; line-height: 1.6; }
+  .export-box code { background: #e8eaed; padding: 1px 4px; border-radius: 3px; font-size: 10px; }
+  .zoom-controls { position: absolute; bottom: 20px; right: 20px; display: flex; flex-direction: column; gap: 4px; z-index: 50; }
+  .zoom-btn { width: 36px; height: 36px; background: white; border: 1px solid #e0e0e0; border-radius: 8px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: all 0.15s; }
+  .zoom-btn:hover { background: #f8f9fa; }
+  .node-group { cursor: pointer; }
+  .status-bar { position: absolute; bottom: 20px; left: 20px; background: white; border-radius: 10px; padding: 8px 14px; font-size: 12px; color: #666; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e8eaed; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-icon">🔵</div>
+  <div>
+    <h1>BAGE – Stakeholder Map</h1>
+    <p>Bayernwerk AG · encentive Partnership</p>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-secondary" onclick="exportChanges()">📤 Export JSON</button>
+    <button class="btn btn-primary" onclick="openAddModal()">+ Person hinzufügen</button>
+  </div>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Legende – Beziehung</h3>
+      <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div><span>Champion / Aktiver Befürworter</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div><span>Neutral / Beobachter</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ef4444"></div><span>Kritisch / Blocker</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#8b5cf6"></div><span>Strategischer Sponsor</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6b7280"></div><span>Unbekannt</span></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Einfluss</h3>
+      <div class="legend-item"><div class="legend-dot" style="background:#ddd; border:3px solid #555; width:18px; height:18px;"></div><span>Hoch (großer Kreis)</span></div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ddd; border:2px solid #999; width:14px; height:14px;"></div><span>Mittel / Niedrig</span></div>
+    </div>
+    <div class="sidebar-section">
+      <h3>Personen</h3>
+      <div class="person-list" id="personList"></div>
+      <br>
+      <button class="add-btn" onclick="openAddModal()">+ Neue Person hinzufügen</button>
+    </div>
+    <div class="export-area">
+      <h3 style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:#888;margin-bottom:8px;">Sync mit Notion</h3>
+      <div class="export-box">Export JSON → an Claude geben → Notion wird aktualisiert.</div>
+    </div>
+  </div>
+  <div class="canvas-wrap">
+    <svg id="canvas" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrow" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+          <polygon points="0 0, 8 3, 0 6" fill="#94a3b8"/>
+        </marker>
+      </defs>
+      <g id="viewport">
+        <g id="connections"></g>
+        <g id="nodes"></g>
+      </g>
+    </svg>
+    <div class="status-bar" id="statusBar">Stakeholder laden…</div>
+    <div class="zoom-controls">
+      <button class="zoom-btn" onclick="zoomIn()">+</button>
+      <button class="zoom-btn" onclick="zoomReset()">⊙</button>
+      <button class="zoom-btn" onclick="zoomOut()">−</button>
+    </div>
+  </div>
+</div>
+<div class="detail-panel" id="detailPanel">
+  <button class="detail-close" onclick="closeDetail()">✕</button>
+  <div id="detailContent"></div>
+</div>
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2 id="modalTitle">Person bearbeiten</h2>
+    <div class="form-group"><label>Name</label><input type="text" id="fieldName" placeholder="Vollständiger Name"></div>
+    <div class="form-group"><label>Rolle</label><input type="text" id="fieldRole" placeholder="z.B. Head of Sales"></div>
+    <div class="form-group"><label>Berichtet an</label><input type="text" id="fieldReportsTo" placeholder="Name der übergeordneten Person"></div>
+    <div class="form-group"><label>Beziehung zu encentive</label>
+      <select id="fieldRelation">
+        <option value="champion">🟢 Champion / Aktiver Befürworter</option>
+        <option value="neutral">🟡 Neutral / Beobachter</option>
+        <option value="critical">🔴 Kritisch / Blocker</option>
+        <option value="sponsor">🟣 Strategischer Sponsor</option>
+        <option value="unknown">⚫ Unbekannt</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Einfluss</label>
+      <select id="fieldInfluence">
+        <option value="high">🔴 Hoch</option>
+        <option value="medium">🟡 Mittel</option>
+        <option value="low">⚪ Niedrig</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Fokus / Notizen</label><textarea id="fieldNotes" placeholder="Rolle, Fokus, Hintergrund..."></textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" style="flex:1" onclick="closeModal()">Abbrechen</button>
+      <button class="btn btn-danger" id="deleteBtn" style="flex:0.5" onclick="deletePerson()">Löschen</button>
+      <button class="btn btn-primary" style="flex:1" onclick="savePerson()">Speichern</button>
+    </div>
+  </div>
+</div>
+<script>
+const RELATION_COLORS = { champion:'#22c55e', neutral:'#f59e0b', critical:'#ef4444', sponsor:'#8b5cf6', unknown:'#6b7280' };
+const RELATION_LABELS = { champion:'Champion', neutral:'Neutral', critical:'Kritisch', sponsor:'Sponsor', unknown:'Unbekannt' };
+const INFLUENCE_SIZE = { high:48, medium:36, low:26 };
+let people = [
+  {
+    "id": "falk",
+    "name": "Falk Kalus",
+    "role": "Top-Management",
+    "reportsTo": null,
+    "relation": "critical",
+    "influence": "high",
+    "notes": "Oberste Ebene. Sperrt sich gegen direkte Management-Treffen – kein direkter Kontakt.",
+    "x": 380,
+    "y": 100
+  },
+  {
+    "id": "mayrock",
+    "name": "Michael Mayrock",
+    "role": "Vorstand / Vertriebsverantwortung",
+    "reportsTo": null,
+    "relation": "sponsor",
+    "influence": "high",
+    "notes": "Committed zu gemeinsamen Vertriebszielen. Jonas Fehrs Chef.",
+    "x": 700,
+    "y": 100
+  },
+  {
+    "id": "matthias",
+    "name": "Matthias Leitl",
+    "role": "Bereichsleiter",
+    "reportsTo": "falk",
+    "relation": "neutral",
+    "influence": "high",
+    "notes": "Management-Ebene. Berichtslinie über Max.",
+    "x": 380,
+    "y": 240
+  },
+  {
+    "id": "max",
+    "name": "Max Weinzierl",
+    "role": "Leiter Digitale Kundenlösungen",
+    "reportsTo": "matthias",
+    "relation": "champion",
+    "influence": "high",
+    "notes": "Standort Regensburg. Strategischer Entscheider für Partnerschaft. Plattformentwicklung (technisch + kommerziell).",
+    "x": 380,
+    "y": 380
+  },
+  {
+    "id": "marcel",
+    "name": "Marcel Häusler",
+    "role": "Sales & Partnering",
+    "reportsTo": "max",
+    "relation": "champion",
+    "influence": "medium",
+    "notes": "Go-to-Market, Lead-Prozess, Vertriebskoordination. Single Point of Contact für Scaling-Themen.",
+    "x": 220,
+    "y": 520
+  },
+  {
+    "id": "hannes",
+    "name": "Hannes Gierlich",
+    "role": "Projekt-/Produktmanager FlexOn",
+    "reportsTo": "max",
+    "relation": "champion",
+    "influence": "medium",
+    "notes": "Pilotprojekte, Plattform-Integration, Produktentwicklung, Benchmarking.",
+    "x": 530,
+    "y": 520
+  },
+  {
+    "id": "jonas",
+    "name": "Jonas Fehr",
+    "role": "Vertriebsleiter Netz",
+    "reportsTo": "mayrock",
+    "relation": "neutral",
+    "influence": "medium",
+    "notes": "Zahlengetrieben, nicht impulsiv – braucht durchdachte Prozesse. NUR über Marcel kontaktieren!",
+    "x": 700,
+    "y": 240
+  },
+  {
+    "id": "clemens",
+    "name": "Clemens Meusel",
+    "role": "Sales FlexIndustrie (Außendienst)",
+    "reportsTo": "jonas",
+    "relation": "unknown",
+    "influence": "low",
+    "notes": "Einer von zwei zugewiesenen AEs für FlexIndustrie.",
+    "x": 700,
+    "y": 380
+  },
+  {
+    "id": "katharina",
+    "name": "Katharina",
+    "role": "Marketing Energieportal",
+    "reportsTo": null,
+    "relation": "neutral",
+    "influence": "low",
+    "notes": "Koordination Branding/Marketing für das Energieportal.",
+    "x": 900,
+    "y": 380
+  }
+];
+let editingId=null, selectedId=null;
+let transform={ x:40, y:40, scale:1 };
+let isDragging=false, dragStart={x:0,y:0}, draggingNodeId=null, nodeOffset={x:0,y:0};
+function render(){ renderConnections(); renderNodes(); renderSidebar(); updateStatusBar(); }
+function renderConnections(){
+  const g=document.getElementById('connections'); g.innerHTML='';
+  people.forEach(p=>{
+    if(!p.reportsTo)return;
+    const from=people.find(x=>x.id===p.reportsTo); if(!from)return;
+    const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',from.x); line.setAttribute('y1',from.y);
+    line.setAttribute('x2',p.x); line.setAttribute('y2',p.y);
+    line.setAttribute('stroke','#94a3b8'); line.setAttribute('stroke-width','2');
+    line.setAttribute('stroke-dasharray','5,4'); line.setAttribute('stroke-linecap','round');
+    line.setAttribute('marker-end','url(#arrow)'); g.appendChild(line);
+  });
+}
+function getInitials(name){ return name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase(); }
+function renderNodes(){
+  const g=document.getElementById('nodes'); g.innerHTML='';
+  people.forEach(p=>{
+    const color=RELATION_COLORS[p.relation], r=INFLUENCE_SIZE[p.influence], isSel=p.id===selectedId;
+    const grp=document.createElementNS('http://www.w3.org/2000/svg','g');
+    grp.setAttribute('class','node-group'); grp.setAttribute('transform',`translate(${p.x},${p.y})`);
+    const sh=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    sh.setAttribute('r',r+4); sh.setAttribute('fill','rgba(0,0,0,0.08)'); sh.setAttribute('cy','3'); grp.appendChild(sh);
+    if(isSel){ const ring=document.createElementNS('http://www.w3.org/2000/svg','circle');
+      ring.setAttribute('r',r+7); ring.setAttribute('fill','none'); ring.setAttribute('stroke',color);
+      ring.setAttribute('stroke-width','3'); ring.setAttribute('stroke-dasharray','6,3'); ring.setAttribute('opacity','0.7'); grp.appendChild(ring); }
+    const c=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('r',r); c.setAttribute('fill',color); c.setAttribute('stroke','white'); c.setAttribute('stroke-width','3'); grp.appendChild(c);
+    const t=document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('text-anchor','middle'); t.setAttribute('dominant-baseline','central');
+    t.setAttribute('fill','white'); t.setAttribute('font-size',r>40?'16':'13');
+    t.setAttribute('font-weight','700'); t.setAttribute('font-family','system-ui,sans-serif');
+    t.setAttribute('pointer-events','none'); t.textContent=getInitials(p.name); grp.appendChild(t);
+    const nl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    nl.setAttribute('text-anchor','middle'); nl.setAttribute('y',r+16); nl.setAttribute('fill','#1a1a2e');
+    nl.setAttribute('font-size','12'); nl.setAttribute('font-weight','600');
+    nl.setAttribute('font-family','system-ui,sans-serif'); nl.setAttribute('pointer-events','none');
+    nl.textContent=p.name; grp.appendChild(nl);
+    const rl=document.createElementNS('http://www.w3.org/2000/svg','text');
+    rl.setAttribute('text-anchor','middle'); rl.setAttribute('y',r+30); rl.setAttribute('fill','#6b7280');
+    rl.setAttribute('font-size','10'); rl.setAttribute('font-family','system-ui,sans-serif');
+    rl.setAttribute('pointer-events','none'); rl.textContent=p.role.substring(0,35)+(p.role.length>35?'…':''); grp.appendChild(rl);
+    grp.addEventListener('mousedown',e=>onNodeMouseDown(e,p.id));
+    grp.addEventListener('click',e=>{ e.stopPropagation(); selectPerson(p.id); });
+    grp.addEventListener('dblclick',e=>{ e.stopPropagation(); openEditModal(p.id); });
+    g.appendChild(grp);
+  });
+  updateViewport();
+}
+function updateViewport(){ document.getElementById('viewport').setAttribute('transform',`translate(${transform.x},${transform.y}) scale(${transform.scale})`); }
+function renderSidebar(){
+  const list=document.getElementById('personList'); list.innerHTML='';
+  people.forEach(p=>{
+    const color=RELATION_COLORS[p.relation], label=RELATION_LABELS[p.relation];
+    const div=document.createElement('div');
+    div.className='person-card'+(p.id===selectedId?' selected':'');
+    div.innerHTML=`<div class="person-card-name">${p.name}</div><div class="person-card-role">${p.role}</div><span class="person-card-badge" style="background:${color}20;color:${color}">${label}</span>`;
+    div.onclick=()=>selectPerson(p.id); list.appendChild(div);
+  });
+}
+function updateStatusBar(){ document.getElementById('statusBar').textContent=`${people.length} Stakeholder · Drag zum Verschieben · Scroll zum Zoomen`; }
+function selectPerson(id){ selectedId=id; render(); showDetail(id); }
+function showDetail(id){
+  const p=people.find(x=>x.id===id); if(!p)return;
+  const color=RELATION_COLORS[p.relation], label=RELATION_LABELS[p.relation];
+  const reporter=p.reportsTo?people.find(x=>x.id===p.reportsTo):null;
+  const reports=people.filter(x=>x.reportsTo===p.id);
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-avatar" style="background:${color}">${getInitials(p.name)}</div>
+    <div class="detail-name">${p.name}</div><div class="detail-role">${p.role}</div>
+    <span class="detail-badge" style="background:${color}20;color:${color}">${label}</span>
+    <hr class="detail-divider">
+    ${reporter?`<div class="detail-field"><div class="detail-label">Berichtet an</div><div class="detail-value">↑ ${reporter.name}</div></div>`:''}
+    ${reports.length?`<div class="detail-field"><div class="detail-label">Direkte Berichte</div><div class="detail-value">${reports.map(r=>'↓ '+r.name).join('<br>')}</div></div>`:''}
+    <div class="detail-field"><div class="detail-label">Einfluss</div><div class="detail-value">${p.influence==='high'?'🔴 Hoch':p.influence==='medium'?'🟡 Mittel':'⚪ Niedrig'}</div></div>
+    ${p.notes?`<div class="detail-field"><div class="detail-label">Notizen</div><div class="detail-value">${p.notes}</div></div>`:''}
+    <div class="detail-actions"><button class="btn btn-edit" onclick="openEditModal('${p.id}')">✏️ Bearbeiten</button></div>`;
+  document.getElementById('detailPanel').classList.add('visible');
+}
+function closeDetail(){ document.getElementById('detailPanel').classList.remove('visible'); selectedId=null; render(); }
+function openEditModal(id){
+  editingId=id; const p=people.find(x=>x.id===id);
+  document.getElementById('modalTitle').textContent='Person bearbeiten';
+  document.getElementById('fieldName').value=p.name;
+  document.getElementById('fieldRole').value=p.role;
+  document.getElementById('fieldReportsTo').value=p.reportsTo?(people.find(x=>x.id===p.reportsTo)||{}).name||'':'';
+  document.getElementById('fieldRelation').value=p.relation;
+  document.getElementById('fieldInfluence').value=p.influence;
+  document.getElementById('fieldNotes').value=p.notes||'';
+  document.getElementById('deleteBtn').style.display='block';
+  document.getElementById('modalOverlay').classList.add('visible');
+}
+function openAddModal(){
+  editingId=null;
+  document.getElementById('modalTitle').textContent='Person hinzufügen';
+  ['fieldName','fieldRole','fieldReportsTo','fieldNotes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fieldRelation').value='unknown';
+  document.getElementById('fieldInfluence').value='medium';
+  document.getElementById('deleteBtn').style.display='none';
+  document.getElementById('modalOverlay').classList.add('visible');
+}
+function closeModal(){ document.getElementById('modalOverlay').classList.remove('visible'); }
+function savePerson(){
+  const name=document.getElementById('fieldName').value.trim(); if(!name){ alert('Name erforderlich.'); return; }
+  const rtn=document.getElementById('fieldReportsTo').value.trim();
+  const rtnId=rtn?(people.find(p=>p.name.toLowerCase()===rtn.toLowerCase())||{}).id||null:null;
+  if(editingId){
+    const p=people.find(x=>x.id===editingId);
+    Object.assign(p,{name,role:document.getElementById('fieldRole').value.trim(),reportsTo:rtnId,
+      relation:document.getElementById('fieldRelation').value,influence:document.getElementById('fieldInfluence').value,
+      notes:document.getElementById('fieldNotes').value.trim()});
+  } else {
+    people.push({id:'p_'+Date.now(),name,role:document.getElementById('fieldRole').value.trim(),
+      reportsTo:rtnId,relation:document.getElementById('fieldRelation').value,
+      influence:document.getElementById('fieldInfluence').value,notes:document.getElementById('fieldNotes').value.trim(),
+      x:350+Math.random()*200,y:350+Math.random()*100});
+  }
+  closeModal(); render();
+}
+function deletePerson(){
+  if(!editingId||!confirm('Person löschen?'))return;
+  people=people.filter(p=>p.id!==editingId);
+  people.forEach(p=>{ if(p.reportsTo===editingId)p.reportsTo=null; });
+  closeModal(); closeDetail(); render();
+}
+function onNodeMouseDown(e,id){
+  e.stopPropagation(); draggingNodeId=id;
+  const p=people.find(x=>x.id===id), pt=getSVGPoint(e.clientX,e.clientY);
+  nodeOffset={x:pt.x-p.x,y:pt.y-p.y};
+  window.addEventListener('mousemove',onNodeMouseMove); window.addEventListener('mouseup',onNodeMouseUp);
+}
+function onNodeMouseMove(e){
+  if(!draggingNodeId)return;
+  const p=people.find(x=>x.id===draggingNodeId), pt=getSVGPoint(e.clientX,e.clientY);
+  p.x=pt.x-nodeOffset.x; p.y=pt.y-nodeOffset.y; render();
+}
+function onNodeMouseUp(){ draggingNodeId=null; window.removeEventListener('mousemove',onNodeMouseMove); window.removeEventListener('mouseup',onNodeMouseUp); }
+const svg=document.getElementById('canvas');
+svg.addEventListener('mousedown',e=>{ if(draggingNodeId)return; isDragging=true; dragStart={x:e.clientX-transform.x,y:e.clientY-transform.y}; svg.style.cursor='grabbing'; });
+window.addEventListener('mousemove',e=>{ if(!isDragging)return; transform.x=e.clientX-dragStart.x; transform.y=e.clientY-dragStart.y; updateViewport(); });
+window.addEventListener('mouseup',()=>{ isDragging=false; svg.style.cursor='grab'; });
+svg.addEventListener('wheel',e=>{ e.preventDefault(); transform.scale=Math.min(2.5,Math.max(0.3,transform.scale*(e.deltaY>0?0.9:1.1))); updateViewport(); },{passive:false});
+svg.addEventListener('click',()=>{ if(selectedId)closeDetail(); });
+function zoomIn(){ transform.scale=Math.min(2.5,transform.scale*1.2); updateViewport(); }
+function zoomOut(){ transform.scale=Math.max(0.3,transform.scale*0.8); updateViewport(); }
+function zoomReset(){ transform={x:40,y:40,scale:1}; updateViewport(); }
+function getSVGPoint(cx,cy){ const r=svg.getBoundingClientRect(); return {x:(cx-r.left-transform.x)/transform.scale,y:(cy-r.top-transform.y)/transform.scale}; }
+function exportChanges(){
+  const blob=new Blob([JSON.stringify({partner:'BAGE',exportedAt:new Date().toISOString(),people:people.map(({x,y,...r})=>r)},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='bage-stakeholders.json'; a.click();
+}
+render();
+</script>
+</body>
+</html>
